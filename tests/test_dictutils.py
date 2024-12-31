@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import pytest
 
@@ -74,6 +72,22 @@ def test_copy():
     return
 
 
+def test_omd_pickle():
+    import pickle
+
+    empty = OMD()
+    pickled = pickle.dumps(empty)
+    roundtripped = pickle.loads(pickled)
+    assert roundtripped == empty
+
+    nonempty = OMD([('a', 1), ('b', 2), ('b', 3)])
+
+    roundtripped = pickle.loads(pickle.dumps(nonempty)) 
+    assert roundtripped == nonempty
+    assert roundtripped.getlist('b') == [2, 3]
+
+
+
 def test_clear():
     for itemset in _ITEMSETS:
         omd = OMD(itemset)
@@ -89,10 +103,7 @@ def test_clear():
 
 
 def test_types():
-    try:
-        from collections.abc import MutableMapping
-    except ImportError:
-        from collections import MutableMapping
+    from collections.abc import MutableMapping
 
     omd = OMD()
     assert isinstance(omd, dict)
@@ -245,11 +256,8 @@ def test_pop_all():
 
 
 def test_reversed():
-    try:
-        from collections import OrderedDict
-    except:
-        # skip on python 2.6
-        return
+    from collections import OrderedDict
+
     for items in _ITEMSETS:
         omd = OMD(items)
         od = OrderedDict(items)
@@ -285,12 +293,25 @@ def test_setdefault():
     assert e_omd.popall(1, None) is None
     assert len(e_omd) == 0
 
+
+def test_ior():
+    omd_a = OMD(_ITEMSETS[1])
+    omd_b = OMD(_ITEMSETS[2])
+    omd_c = OMD(_ITEMSETS[1])
+
+    omd_a_id = id(omd_a)
+    omd_a |= omd_b
+    omd_c.update(omd_b)
+
+    assert omd_a_id == id(omd_a)
+    assert omd_a == omd_c
+
 ## END OMD TESTS
 
 import string
 
 def test_subdict():
-    cap_map = dict([(x, x.upper()) for x in string.hexdigits])
+    cap_map = {x: x.upper() for x in string.hexdigits}
     assert len(cap_map) == 22
     assert len(subdict(cap_map, drop=['a'])) == 21
     assert 'a' not in subdict(cap_map, drop=['a'])
@@ -341,8 +362,10 @@ def test_one_to_one():
     e.inv.setdefault(2)
     ck({1: None, None: 2}, {None: 1, 2: None})
     e.clear()
-    e.update({1:2}, cat="dog")
-    ck({1:2, "cat":"dog"}, {2:1, "dog":"cat"})
+    e.update({})
+    ck({}, {})
+    e.update({1: 2}, cat="dog")
+    ck({1:2, "cat":"dog"}, {2: 1, "dog":"cat"})
 
     # try various overlapping values
     oto = OneToOne({'a': 0, 'b': 0})
@@ -378,7 +401,7 @@ def test_many_to_many():
     del m2m.inv['b']
     assert 1 not in m2m
     m2m[1] = ('a', 'b')
-    assert set(m2m.iteritems()) == set([(1, 'a'), (1, 'b')])
+    assert set(m2m.iteritems()) == {(1, 'a'), (1, 'b')}
     m2m.remove(1, 'a')
     m2m.remove(1, 'b')
     assert 1 not in m2m
@@ -473,7 +496,9 @@ def test_frozendict_api():
                        '__format__',
                        '__ge__',
                        '__getattribute__',
+                       '__getstate__',
                        '__getitem__',
+                       '__getstate__',
                        '__gt__',
                        '__init__',
                        '__iter__',
