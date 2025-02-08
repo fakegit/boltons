@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,19 +39,14 @@ issues without compromising on the excellent complexity
 characteristics of Python's built-in set implementation.
 """
 
-from __future__ import print_function
 
 from bisect import bisect_left
+from collections.abc import MutableSet
 from itertools import chain, islice
 import operator
 
 try:
-    from collections.abc import MutableSet
-except ImportError:
-    from collections import MutableSet
-
-try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
 except ImportError:
     _MISSING = object()
@@ -222,12 +215,15 @@ class IndexedSet(MutableSet):
         return (item for item in reversed(item_list) if item is not _MISSING)
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+        return f'{self.__class__.__name__}({list(self)!r})'
 
     def __eq__(self, other):
         if isinstance(other, IndexedSet):
             return len(self) == len(other) and list(self) == list(other)
-        return set(self) == set(other)
+        try:
+            return set(self) == set(other)
+        except TypeError:
+            return False
 
     @classmethod
     def from_iterable(cls, it):
@@ -469,7 +465,7 @@ class IndexedSet(MutableSet):
             return self._get_apparent_index(self.item_index_map[val])
         except KeyError:
             cn = self.__class__.__name__
-            raise ValueError('%r is not in %s' % (val, cn))
+            raise ValueError(f'{val!r} is not in {cn}')
 
 
 def complement(wrapped):
@@ -581,7 +577,7 @@ def _norm_args_notimplemented(other):
     return inc, exc
 
 
-class _ComplementSet(object):
+class _ComplementSet:
     """
     helper class for complement() that implements the set methods
     """
@@ -598,8 +594,8 @@ class _ComplementSet(object):
 
     def __repr__(self):
         if self._included is None:
-            return 'complement({0})'.format(repr(self._excluded))
-        return 'complement(complement({0}))'.format(repr(self._included))
+            return f'complement({repr(self._excluded)})'
+        return f'complement(complement({repr(self._included)}))'
 
     def complemented(self):
         '''return a complement of the current set'''
@@ -971,4 +967,3 @@ class _ComplementSet(object):
             return bool(self._included)
         return True
 
-    __nonzero__ = __bool__  # py2 compat

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -70,13 +68,13 @@ from bisect import insort
 import itertools
 
 try:
-    from typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _REMOVED = make_sentinel(var_name='_REMOVED')
 except ImportError:
     _REMOVED = object()
 
 try:
-    from listutils import BList
+    from .listutils import BList
     # see BarrelList docstring for notes
 except ImportError:
     BList = list
@@ -90,7 +88,7 @@ __all__ = ['PriorityQueue', 'BasePriorityQueue',
 # TODO: add uniqueification
 
 
-class BasePriorityQueue(object):
+class BasePriorityQueue:
     """The abstract base class for the other PriorityQueues in this
     module. Override the ``_backend_type`` class attribute, as well as
     the :meth:`_push_entry` and :meth:`_pop_entry` staticmethods for

@@ -18,6 +18,7 @@ present in the standard library.
 
 .. autofunction:: chunked
 .. autofunction:: chunked_iter
+.. autofunction:: chunk_ranges
 .. autofunction:: pairwise
 .. autofunction:: pairwise_iter
 .. autofunction:: windowed
@@ -62,7 +63,7 @@ Numeric
 -------
 
 Number sequences are an obvious target of Python iteration, such as
-the built-in :func:`range`, :func:`xrange`, and
+the built-in :func:`range`, and
 :func:`itertools.count`. Like the :ref:`iteration` members above,
 these return iterators and lists, but take numeric inputs instead of
 iterables.

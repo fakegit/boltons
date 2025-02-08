@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright (c) 2013, Mahmoud Hashemi
 #
 # Redistribution and use in source and binary forms, with or without
@@ -73,7 +71,7 @@ from operator import attrgetter
 try:
     from threading import RLock
 except Exception:
-    class RLock(object):
+    class RLock:
         'Dummy reentrant lock for builds without threads'
         def __enter__(self):
             pass
@@ -82,19 +80,12 @@ except Exception:
             pass
 
 try:
-    from boltons.typeutils import make_sentinel
+    from .typeutils import make_sentinel
     _MISSING = make_sentinel(var_name='_MISSING')
     _KWARG_MARK = make_sentinel(var_name='_KWARG_MARK')
 except ImportError:
     _MISSING = object()
     _KWARG_MARK = object()
-
-try:
-    xrange
-except NameError:
-    # py3
-    xrange = range
-    unicode, str, bytes, basestring = str, bytes, bytes, (str, bytes)
 
 PREV, NEXT, KEY, VALUE = range(4)   # names for the link fields
 DEFAULT_MAX_SIZE = 128
@@ -234,10 +225,11 @@ class LRI(dict):
                     self._set_key_and_add_to_front_of_ll(key, value)
                 else:
                     evicted = self._set_key_and_evict_last_in_ll(key, value)
-                    super(LRI, self).__delitem__(evicted)
-                super(LRI, self).__setitem__(key, value)
+                    super().__delitem__(evicted)
             else:
                 link[VALUE] = value
+            super().__setitem__(key, value)
+        return
 
     def __getitem__(self, key):
         with self._lock:
@@ -262,14 +254,14 @@ class LRI(dict):
 
     def __delitem__(self, key):
         with self._lock:
-            super(LRI, self).__delitem__(key)
+            super().__delitem__(key)
             self._remove_from_ll(key)
 
     def pop(self, key, default=_MISSING):
         # NB: hit/miss counts are bypassed for pop()
         with self._lock:
             try:
-                ret = super(LRI, self).pop(key)
+                ret = super().pop(key)
             except KeyError:
                 if default is _MISSING:
                     raise
@@ -280,13 +272,13 @@ class LRI(dict):
 
     def popitem(self):
         with self._lock:
-            item = super(LRI, self).popitem()
+            item = super().popitem()
             self._remove_from_ll(item[0])
             return item
 
     def clear(self):
         with self._lock:
-            super(LRI, self).clear()
+            super().clear()
             self._init_ll()
 
     def copy(self):
@@ -325,14 +317,14 @@ class LRI(dict):
                 return False
             if not isinstance(other, LRI):
                 return other == self
-            return super(LRI, self).__eq__(other)
+            return super().__eq__(other)
 
     def __ne__(self, other):
         return not (self == other)
 
     def __repr__(self):
         cn = self.__class__.__name__
-        val_map = super(LRI, self).__repr__()
+        val_map = super().__repr__()
         return ('%s(max_size=%r, on_miss=%r, values=%s)'
                 % (cn, self.max_size, self.on_miss, val_map))
 
@@ -403,7 +395,7 @@ class _HashedKey(list):
         return self.hash_value
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, list.__repr__(self))
+        return f'{self.__class__.__name__}({list.__repr__(self)})'
 
 
 def make_cache_key(args, kwargs, typed=False,
@@ -446,7 +438,7 @@ def make_cache_key(args, kwargs, typed=False,
 _make_cache_key = make_cache_key
 
 
-class CachedFunction(object):
+class CachedFunction:
     """This type is used by :func:`cached`, below. Instances of this
     class are used to wrap functions in caching logic.
     """
@@ -481,17 +473,17 @@ class CachedFunction(object):
         if self.typed or not self.scoped:
             return ("%s(func=%r, scoped=%r, typed=%r)"
                     % (cn, self.func, self.scoped, self.typed))
-        return "%s(func=%r)" % (cn, self.func)
+        return f"{cn}(func={self.func!r})"
 
 
-class CachedMethod(object):
+class CachedMethod:
     """Similar to :class:`CachedFunction`, this type is used by
     :func:`cachedmethod` to wrap methods in caching logic.
     """
     def __init__(self, func, cache, scoped=True, typed=False, key=None):
         self.func = func
         self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
-        if isinstance(cache, basestring):
+        if isinstance(cache, str):
             self.get_cache = attrgetter(cache)
         elif callable(cache):
             self.get_cache = cache
@@ -620,7 +612,7 @@ def cachedmethod(cache, scoped=True, typed=False, key=None):
     return cached_method_decorator
 
 
-class cachedproperty(object):
+class cachedproperty:
     """The ``cachedproperty`` is used similar to :class:`property`, except
     that the wrapped method is only called once. This is commonly used
     to implement lazy attributes.
@@ -643,10 +635,10 @@ class cachedproperty(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return f'<{cn} func={self.func}>'
 
 
-class ThresholdCounter(object):
+class ThresholdCounter:
     """A **bounded** dict-like Mapping from keys to counts. The
     ThresholdCounter automatically compacts after every (1 /
     *threshold*) additions, maintaining exact counts for any keys
@@ -718,8 +710,8 @@ class ThresholdCounter(object):
             self._count_map[key] = [1, self._cur_bucket - 1]
 
         if self.total % self._thresh_count == 0:
-            self._count_map = dict([(k, v) for k, v in self._count_map.items()
-                                    if sum(v) > self._cur_bucket])
+            self._count_map = {k: v for k, v in self._count_map.items()
+                                    if sum(v) > self._cur_bucket}
             self._cur_bucket += 1
         return
 
@@ -734,7 +726,7 @@ class ThresholdCounter(object):
         """Get the top *n* keys and counts as tuples. If *n* is omitted,
         returns all the pairs.
         """
-        if n <= 0:
+        if not n or n <= 0:
             return []
         ret = sorted(self.iteritems(), key=lambda x: x[1], reverse=True)
         if n is None or n >= len(ret):
@@ -812,7 +804,7 @@ class ThresholdCounter(object):
         if iterable is not None:
             if callable(getattr(iterable, 'iteritems', None)):
                 for key, count in iterable.iteritems():
-                    for i in xrange(count):
+                    for i in range(count):
                         self.add(key)
             else:
                 for key in iterable:
@@ -821,7 +813,7 @@ class ThresholdCounter(object):
             self.update(kwargs)
 
 
-class MinIDMap(object):
+class MinIDMap:
     """
     Assigns arbitrary weakref-able objects the smallest possible unique
     integer IDs, such that no two objects have the same ID at the same

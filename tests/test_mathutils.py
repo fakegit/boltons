@@ -1,4 +1,3 @@
-
 from pytest import raises
 from boltons.mathutils import clamp, ceil, floor, Bits
 import math
@@ -95,15 +94,19 @@ def test_bits():
     chk(Bits('11') >> 1, Bits('1'))
     chk(Bits('1') << 1, Bits('10'))
     assert Bits('0') != Bits('00')
+    # test roundtrip as_/from_hex
+    chk(Bits.from_hex(Bits('10101010').as_hex()),
+        Bits('10101010'))
+    # test roundtrip as_/from_bytes
     chk(
-        Bits.from_bytes(
-            Bits.from_int(
-                Bits.from_hex(
-                    Bits.from_bin(
-                        Bits.from_list(
-                            Bits('101').as_list()
-                        ).as_bin()
-                    ).as_hex()
-                ).as_int()
-            ).as_bytes()
-    ), Bits('00000101'))
+        Bits.from_bytes(Bits('10101010').as_bytes()),
+        Bits('10101010'))
+    # pile of roundtripping
+    chk(Bits.from_int(
+            Bits.from_bin(
+                Bits.from_list(
+                    Bits('101').as_list()
+                ).as_bin()
+            ).as_int()
+        ),
+        Bits('101'))

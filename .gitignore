@@ -1,8 +1,9 @@
 docs/_build
 tmp.py
 htmlcov/
-
+venv/
 *.py[cod]
+venv-rtd/
 
 # emacs
 *~

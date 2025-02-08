@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 from collections import namedtuple
 
@@ -29,15 +27,8 @@ _TEST_TMPLS = ["example 1: {hello}",
                "example 2: {hello:*10}",
                "example 3: {hello:*{width}}",
                "example 4: {hello!r:{fchar}{width}}, {width}, yes",
-               "example 5: {0}, {1:d}, {2:f}, {1}"]
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    pass  # skip the non-2.6 compatible tests on 2.6
-else:
-    _TEST_TMPLS.append("example 6: {}, {}, {}, {1}")
-    del OrderedDict
+               "example 5: {0}, {1:d}, {2:f}, {1}",
+               "example 6: {}, {}, {}, {1}"]
 
 
 def test_get_fstr_args():
@@ -45,8 +36,7 @@ def test_get_fstr_args():
     for t in _TEST_TMPLS:
         inferred_t = infer_positional_format_args(t)
         res = get_format_args(inferred_t)
-        results.append(res)
-    return results
+        assert res
 
 
 def test_split_fstr():
@@ -54,7 +44,7 @@ def test_split_fstr():
     for t in _TEST_TMPLS:
         res = split_format_str(t)
         results.append(res)
-    return results
+        assert res
 
 
 def test_tokenize_format_str():
@@ -62,7 +52,7 @@ def test_tokenize_format_str():
     for t in _TEST_TMPLS:
         res = tokenize_format_str(t)
         results.append(res)
-    return results
+        assert res
 
 
 def test_deferredvalue():

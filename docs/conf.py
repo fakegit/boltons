@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # boltons documentation build configuration file, created by
 # sphinx-quickstart on Sat Mar 21 00:34:18 2015.
@@ -96,12 +95,12 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'boltons'
-copyright = u'2020, Mahmoud Hashemi'
-author = u'Mahmoud Hashemi'
+project = 'boltons'
+copyright = '2025, Mahmoud Hashemi'
+author = 'Mahmoud Hashemi'
 
-version = '21.0'
-release = '21.0.0'
+version = '25.0'
+release = '25.0.0'
 
 if os.name != 'nt':
     today_fmt = '%B %d, %Y'
@@ -121,11 +120,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None)}
 # a list of builtin themes.
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if on_rtd:
-    html_theme = 'default'
-else: # only import and set the theme if we're building docs locally
+html_theme = 'sphinx_rtd_theme'
+
+if not on_rtd: # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
     html_theme_path = ['_themes', sphinx_rtd_theme.get_html_theme_path()]
 
 
@@ -248,8 +246,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'boltons.tex', u'boltons Documentation',
-   u'Mahmoud Hashemi', 'manual'),
+  (master_doc, 'boltons.tex', 'boltons Documentation',
+   'Mahmoud Hashemi', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -278,7 +276,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'boltons', u'boltons Documentation',
+    (master_doc, 'boltons', 'boltons Documentation',
      [author], 1)
 ]
 
@@ -292,7 +290,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'boltons', u'boltons Documentation',
+  (master_doc, 'boltons', 'boltons Documentation',
    author, 'boltons', 'One line description of project.',
    'Miscellaneous'),
 ]

@@ -1,10 +1,13 @@
-
 import os
 
 import pytest
 
 from boltons.dictutils import OMD
 from boltons.iterutils import (first,
+                               pairwise,
+                               pairwise_iter,
+                               windowed,
+                               windowed_iter,
                                remap,
                                research,
                                default_enter,
@@ -21,7 +24,7 @@ even = lambda x: isint(x) and x % 2 == 0
 is_meaning_of_life = lambda x: x == 42
 
 
-class TestFirst(object):
+class TestFirst:
     def test_empty_iterables(self):
         """
         Empty iterables return None.
@@ -57,7 +60,7 @@ class TestFirst(object):
         assert first(l, key=is_meaning_of_life) is None
 
 
-class TestRemap(object):
+class TestRemap:
     # TODO: test namedtuples and other immutable containers
 
     def test_basic_clone(self):
@@ -279,8 +282,8 @@ class TestRemap(object):
                  'dads': [{'name': 'Kurt',
                            'interests': ['python', 'recursion']}]}]
 
-        ref = set(['python', 'recursion', 'biking', 'museums',
-                   'pears', 'theater', 'manga'])
+        ref = {'python', 'recursion', 'biking', 'museums',
+                   'pears', 'theater', 'manga'}
 
         remap(orig, enter=enter)
         assert all_interests == ref
@@ -337,7 +340,7 @@ class TestRemap(object):
 
     def test_remap_set(self):
         # explicit test for sets to make sure #84 is covered
-        s = set([1, 2, 3])
+        s = {1, 2, 3}
         assert remap(s) == s
 
         fs = frozenset([1, 2, 3])
@@ -356,7 +359,7 @@ class TestRemap(object):
         return
 
 
-class TestGetPath(object):
+class TestGetPath:
     def test_depth_one(self):
         root = ['test']
         assert get_path(root, (0,)) == 'test'
@@ -391,6 +394,28 @@ def test_research():
 
     # empty results with default, reraise=False
     assert research(root, broken_query) == []
+
+
+def test_research_custom_enter():
+    # see #368
+    from types import SimpleNamespace as NS
+    root = NS(
+        a='a',
+        b='b',
+        c=NS(aa='aa') )
+
+    def query(path, key, value):
+        return value.startswith('a')
+    
+    def custom_enter(path, key, value):
+        if isinstance(value, NS):
+            return [], value.__dict__.items()
+        return default_enter(path, key, value)
+
+    with pytest.raises(TypeError):
+        research(root, query)
+    assert research(root, query, enter=custom_enter) == [(('a',), 'a'), (('c', 'aa'), 'aa')]
+
 
 
 def test_backoff_basic():
@@ -511,6 +536,22 @@ def test_chunked_bytes():
     assert chunked(b'123', 2) in (['12', '3'], [b'12', b'3'])
 
 
+def test_chunk_ranges():
+    from boltons.iterutils import chunk_ranges
+
+    assert list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5)) == [(10, 15), (15, 20)]
+    assert list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5, overlap_size=1)) == [(10, 15), (14, 19), (18, 20)]
+    assert list(chunk_ranges(input_offset=10, input_size=10, chunk_size=5, overlap_size=2)) == [(10, 15), (13, 18), (16, 20)]
+
+    assert list(chunk_ranges(input_offset=4, input_size=15, chunk_size=5, align=False)) == [(4, 9), (9, 14), (14, 19)]
+    assert list(chunk_ranges(input_offset=4, input_size=15, chunk_size=5, align=True)) == [(4, 5), (5, 10), (10, 15), (15, 19)]
+
+    assert list(chunk_ranges(input_offset=2, input_size=15, chunk_size=5, overlap_size=1, align=False)) == [(2, 7), (6, 11), (10, 15), (14, 17)]
+    assert list(chunk_ranges(input_offset=2, input_size=15, chunk_size=5, overlap_size=1, align=True)) == [(2, 5), (4, 9), (8, 13), (12, 17)]
+    assert list(chunk_ranges(input_offset=3, input_size=15, chunk_size=5, overlap_size=1, align=True)) == [(3, 5), (4, 9), (8, 13), (12, 17), (16, 18)]
+    assert list(chunk_ranges(input_offset=3, input_size=2, chunk_size=5, overlap_size=1, align=True)) == [(3, 5)]
+
+
 def test_lstrip():
     from boltons.iterutils import lstrip
 
@@ -535,3 +576,25 @@ def test_strip():
     assert strip([0,0,0,1,0,2,0,3,0,0,0],0) == [1,0,2,0,3]
     assert strip([]) == []
 
+
+def test_pairwise_filled():
+    assert pairwise(range(4)) == [(0, 1), (1, 2), (2, 3)]
+    assert pairwise(range(4), end=None) == [(0, 1), (1, 2), (2, 3), (3, None)]
+
+    assert pairwise([]) == []
+    assert pairwise([1], end=None) == [(1, None)]
+
+    assert list(pairwise_iter(range(4))) == [(0, 1), (1, 2), (2, 3)]
+    assert list(pairwise_iter(range(4), end=None)) == [(0, 1), (1, 2), (2, 3), (3, None)]
+
+
+def test_windowed_filled():
+    assert windowed(range(4), 3) == [(0, 1, 2), (1, 2, 3)]
+    assert windowed(range(4), 3, fill=None) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
+
+    assert windowed([], 3) == []
+    assert windowed([], 3, fill=None) == []
+    assert windowed([1, 2], 3, fill=None) == [(1, 2, None), (2, None, None)]
+
+    assert list(windowed_iter(range(4), 3)) == [(0, 1, 2), (1, 2, 3)]
+    assert list(windowed_iter(range(4), 3, fill=None)) == [(0, 1, 2), (1, 2, 3), (2, 3, None), (3, None, None)]
